@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Défi souris — chronométrage</title>
+<style>
+:root{
+  --bg:#f4f4f2; --card:#fff; --ink:#111; --line:#d6d6d0;
+  --accent:#2c6e63; --accent2:#b8442c; --ok:#2c6e63; --muted:#6a6a64;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+     background:var(--bg);color:var(--ink);font-size:17px;line-height:1.4}
+header{background:var(--accent);color:#fff;padding:14px 16px;position:sticky;top:0;z-index:10;
+       display:flex;align-items:center;gap:12px}
+header h1{font-size:18px;margin:0;flex:1}
+header button{background:rgba(255,255,255,.18);color:#fff;border:0;padding:8px 12px;
+              border-radius:8px;font-size:15px}
+main{padding:16px;max-width:820px;margin:0 auto}
+.hide{display:none!important}
+
+/* accueil */
+.groupes{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;margin-top:20px}
+.gbtn{background:var(--card);border:2px solid var(--line);border-radius:16px;padding:22px 10px;
+      text-align:center;font-size:22px;font-weight:700;color:var(--ink)}
+.gbtn small{display:block;font-size:14px;font-weight:400;color:var(--muted);margin-top:6px}
+.gbtn:active{border-color:var(--accent)}
+.intro{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:8px}
+.intro h2{margin:0 0 8px;font-size:17px}
+.intro ol{margin:0;padding-left:20px}
+.intro li{margin-bottom:6px}
+
+/* onglets jour */
+.jours{display:flex;gap:8px;margin-bottom:16px}
+.jours button{flex:1;padding:14px;border-radius:12px;border:2px solid var(--line);
+              background:var(--card);font-size:17px;font-weight:600;color:var(--ink)}
+.jours button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+
+.souris{margin-bottom:26px}
+.souris > h2{font-size:18px;margin:0 0 10px;padding:8px 12px;background:#e6e6e0;
+             border-radius:10px;border-left:5px solid var(--accent)}
+.essai{background:var(--card);border:1px solid var(--line);border-radius:14px;
+       padding:12px;margin-bottom:12px}
+.essai .top{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.essai .num{font-weight:700;font-size:16px;flex:1}
+.essai .res{font-variant-numeric:tabular-nums;font-weight:700;font-size:20px;color:var(--accent2)}
+video{width:100%;border-radius:10px;background:#000;display:block}
+.chrono{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap}
+.tps{font-variant-numeric:tabular-nums;font-size:26px;font-weight:700;min-width:96px;
+     background:#111;color:#7dffb0;padding:6px 10px;border-radius:8px;text-align:center}
+.chrono button{flex:1;min-width:120px;padding:14px 10px;border-radius:10px;border:0;
+               font-size:16px;font-weight:700;color:#fff;background:var(--accent)}
+.chrono button.stop{background:var(--accent2)}
+.chrono button.raz{background:#8a8a82;flex:0 0 auto;min-width:64px;font-weight:600}
+.chrono button:disabled{opacity:.35}
+.marque{font-size:14px;color:var(--muted);margin-top:6px}
+
+/* tableau */
+.recap{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:30px}
+.recap h2{font-size:17px;margin:0 0 10px}
+table{width:100%;border-collapse:collapse;font-size:16px}
+th,td{border:1px solid var(--line);padding:9px 6px;text-align:center}
+th{background:#ecece6;font-size:14px}
+td.lab{text-align:left;font-weight:600}
+input[type=number]{width:100%;border:2px solid var(--line);border-radius:8px;padding:9px;
+                   font-size:17px;text-align:center;font-variant-numeric:tabular-nums;
+                   -moz-appearance:textfield}
+input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.verif{margin-top:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.verif button{background:var(--accent);color:#fff;border:0;padding:12px 16px;border-radius:10px;
+              font-size:16px;font-weight:600}
+.msg{font-size:16px;font-weight:600;flex:1;min-width:180px}
+.msg.ok{color:var(--ok)} .msg.ko{color:var(--accent2)}
+footer{text-align:center;color:var(--muted);font-size:13px;padding:0 16px 30px}
+</style>
+</head>
+<body>
+
+<header>
+  <button id="back" class="hide">‹ Groupes</button>
+  <h1 id="titre">Défi souris — chronométrage</h1>
+</header>
+
+<main>
+
+<section id="accueil">
+  <div class="intro">
+    <h2>Aidez Susanna à trouver quel environnement permet aux souris d'apprendre plus vite&nbsp;!</h2>
+    <ol>
+      <li>Choisissez le numéro de votre groupe.</li>
+      <li>Regardez d'abord une vidéo <b>sans rien chronométrer</b>.</li>
+      <li>Puis, pour chaque essai : appuyez sur <b>Départ</b> quand la souris touche l'eau, sur <b>Arrivée</b> quand ses pattes sont sur la plateforme.</li>
+      <li>Recopiez les temps dans votre carnet.</li>
+    </ol>
+  </div>
+  <div class="groupes" id="groupes"></div>
+</section>
+
+<section id="travail" class="hide">
+  <div class="jours">
+    <button data-j="1" class="on">Jour 1</button>
+    <button data-j="5">Jour 5</button>
+  </div>
+  <div id="contenu"></div>
+  <div class="recap">
+    <h2 id="recapTitre">Nos temps</h2>
+    <table>
+      <tr><th></th><th>Essai 1</th><th>Essai 2</th><th>Essai 3</th></tr>
+      <tr><td class="lab" id="labA">Souris A</td><td id="rA1">—</td><td id="rA2">—</td><td id="rA3">—</td></tr>
+      <tr><td class="lab" id="labB">Souris B</td><td id="rB1">—</td><td id="rB2">—</td><td id="rB3">—</td></tr>
+    </table>
+    <div class="verif">
+      <span class="msg" id="msgA">Moyenne souris A :</span>
+      <input type="number" id="moyA" inputmode="decimal" placeholder="?" style="max-width:110px">
+      <button data-q="A">Vérifier</button>
+    </div>
+    <div class="verif">
+      <span class="msg" id="msgB">Moyenne souris B :</span>
+      <input type="number" id="moyB" inputmode="decimal" placeholder="?" style="max-width:110px">
+      <button data-q="B">Vérifier</button>
+    </div>
+    <div class="verif">
+      <button class="raz" id="effacer" style="background:#8a8a82">Tout effacer pour ce jour</button>
+    </div>
+  </div>
+</section>
+
+</main>
+<footer>Défi de la rentrée en sciences 2026-2027 · Savanturiers – AFPER · École de Saint-Juan</footer>
+
+<script>
+const GROUPES = {
+  1:{A:'1367',B:'1372'}, 2:{A:'1368',B:'1370'}, 3:{A:'1369',B:'1373'},
+  4:{A:'1374',B:'1375'}, 5:{A:'1371',B:'1376'}
+};
+const KEY='defi-souris-v1';
+let etat = {};
+try{ etat = JSON.parse(localStorage.getItem(KEY)||'{}'); }catch(e){ etat={}; }
+function save(){ try{ localStorage.setItem(KEY,JSON.stringify(etat)); }catch(e){} }
+
+let groupe=null, jour=1;
+
+const $=s=>document.querySelector(s);
+const fmt=t=>t.toFixed(2).replace('.',',')+' s';
+
+// --- accueil
+const gz=$('#groupes');
+for(const n of [1,2,3,4,5]){
+  const b=document.createElement('button');
+  b.className='gbtn';
+  b.innerHTML='Groupe '+n+'<small>souris '+GROUPES[n].A+' et '+GROUPES[n].B+'</small>';
+  b.onclick=()=>ouvrir(n);
+  gz.appendChild(b);
+}
+if(etat.groupe && GROUPES[etat.groupe]) ouvrir(etat.groupe);
+
+$('#back').onclick=()=>{
+  $('#travail').classList.add('hide'); $('#accueil').classList.remove('hide');
+  $('#back').classList.add('hide'); $('#titre').textContent='Défi souris — chronométrage';
+  groupe=null; etat.groupe=null; save();
+};
+
+document.querySelectorAll('.jours button').forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll('.jours button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on'); jour=+b.dataset.j; rendre();
+  };
+});
+
+function ouvrir(n){
+  groupe=n; etat.groupe=n; save();
+  $('#accueil').classList.add('hide'); $('#travail').classList.remove('hide');
+  $('#back').classList.remove('hide');
+  $('#titre').textContent='Groupe '+n;
+  rendre();
+}
+
+function cle(s,e){ return 'g'+groupe+'_j'+jour+'_'+s+'_t'+e; }
+
+function rendre(){
+  const g=GROUPES[groupe];
+  $('#recapTitre').textContent='Nos temps — jour '+jour;
+  $('#labA').textContent='Souris '+g.A;
+  $('#labB').textContent='Souris '+g.B;
+  $('#msgA').textContent='Moyenne souris '+g.A+' :'; $('#msgA').className='msg';
+  $('#msgB').textContent='Moyenne souris '+g.B+' :'; $('#msgB').className='msg';
+  $('#moyA').value=''; $('#moyB').value='';
+  const c=$('#contenu'); c.innerHTML='';
+  for(const lettre of ['A','B']){
+    const num=g[lettre];
+    const bloc=document.createElement('div');
+    bloc.className='souris';
+    bloc.innerHTML='<h2>Souris n° '+num+' — jour '+jour+'</h2>';
+    for(let e=1;e<=3;e++) bloc.appendChild(carte(num,e));
+    c.appendChild(bloc);
+  }
+  majRecap();
+}
+
+function carte(num,e){
+  const d=document.createElement('div'); d.className='essai';
+  const f='videos/J'+jour+'_'+num+'_t'+e+'.mp4';
+  const k=cle(num,e);
+  d.innerHTML =
+   '<div class="top"><span class="num">Essai '+e+'</span><span class="res" id="res_'+k+'">'+
+   (etat[k]!=null?fmt(etat[k]):'—')+'</span></div>'+
+   '<video src="'+f+'" playsinline preload="metadata" controls></video>'+
+   '<div class="chrono">'+
+     '<span class="tps" id="tps_'+k+'">0,00</span>'+
+     '<button class="dep">Départ</button>'+
+     '<button class="stop" disabled>Arrivée</button>'+
+     '<button class="raz">RAZ</button>'+
+   '</div>'+
+   '<div class="marque" id="mk_'+k+'"></div>';
+
+  const v=d.querySelector('video'), tps=d.querySelector('.tps');
+  const bd=d.querySelector('.dep'), bs=d.querySelector('.stop'), br=d.querySelector('.raz');
+  const mk=d.querySelector('#mk_'+k), res=d.querySelector('#res_'+k);
+  let t0=null;
+
+  const tick=()=>{ tps.textContent=v.currentTime.toFixed(2).replace('.',','); };
+  v.addEventListener('timeupdate',tick);
+  v.addEventListener('seeked',tick);
+
+  bd.onclick=()=>{
+    t0=v.currentTime; bs.disabled=false;
+    mk.textContent='Départ marqué à '+fmt(t0);
+    res.textContent='…';
+  };
+  bs.onclick=()=>{
+    if(t0==null) return;
+    const t=v.currentTime-t0;
+    if(t<=0){ mk.textContent='L’arrivée doit être après le départ. Recommence.'; return; }
+    etat[k]=t; save();
+    res.textContent=fmt(t);
+    mk.textContent='Départ '+fmt(t0)+' → arrivée '+fmt(v.currentTime)+'  •  durée '+fmt(t);
+    bs.disabled=true; t0=null;
+    majRecap();
+  };
+  br.onclick=()=>{
+    delete etat[k]; save(); t0=null; bs.disabled=true;
+    res.textContent='—'; mk.textContent='';
+    majRecap();
+  };
+  return d;
+}
+
+function majRecap(){
+  const g=GROUPES[groupe];
+  for(const [lettre,num] of [['A',g.A],['B',g.B]]){
+    for(let e=1;e<=3;e++){
+      const val=etat[cle(num,e)];
+      $('#r'+lettre+e).textContent = val!=null ? Math.round(val)+' s' : '—';
+    }
+  }
+}
+
+document.querySelectorAll('.verif button[data-q]').forEach(b=>{
+  b.onclick=()=>{
+    const q=b.dataset.q, g=GROUPES[groupe], num=g[q];
+    const vals=[1,2,3].map(e=>etat[cle(num,e)]).filter(v=>v!=null);
+    const msg=$('#msg'+q);
+    if(vals.length<3){ msg.className='msg ko';
+      msg.textContent='Il manque des essais pour la souris '+num+'.'; return; }
+    const rep=parseFloat(($('#moy'+q).value||'').replace(',','.'));
+    if(isNaN(rep)){ msg.className='msg ko';
+      msg.textContent='Écris d’abord ta moyenne pour la souris '+num+'.'; return; }
+    const vraie=vals.map(Math.round).reduce((a,b)=>a+b,0)/3;
+    const ecart=Math.abs(rep-vraie);
+    if(ecart<=0.6){ msg.className='msg ok'; msg.textContent='Bravo, c’est juste pour la souris '+num+' !'; }
+    else if(ecart<=3){ msg.className='msg ko'; msg.textContent='Tu y es presque — revérifie ton addition.'; }
+    else { msg.className='msg ko'; msg.textContent='Ce n’est pas ça. Additionne les 3 temps, puis divise par 3.'; }
+  };
+});
+
+$('#effacer').onclick=()=>{
+  const g=GROUPES[groupe];
+  for(const num of [g.A,g.B]) for(let e=1;e<=3;e++) delete etat[cle(num,e)];
+  save(); rendre();
+};
+</script>
+</body>
+</html>
