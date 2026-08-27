@@ -136,6 +136,13 @@ const GROUPES = {
   4:{A:'1374',B:'1375'}, 5:{A:'1371',B:'1376'}
 };
 const KEY='defi-souris-v1';
+// nom du dossier des videos : detecte automatiquement (videos_mp4 ou videos)
+let DOSSIER='videos_mp4';
+async function detecterDossier(){
+  for(const d of ['videos_mp4','videos']){
+    try{ const r=await fetch(d+'/J1_1367_t1.mp4',{method:'HEAD'}); if(r.ok){ DOSSIER=d; return; } }catch(e){}
+  }
+}
 let etat = {};
 try{ etat = JSON.parse(localStorage.getItem(KEY)||'{}'); }catch(e){ etat={}; }
 function save(){ try{ localStorage.setItem(KEY,JSON.stringify(etat)); }catch(e){} }
@@ -154,7 +161,7 @@ for(const n of [1,2,3,4,5]){
   b.onclick=()=>ouvrir(n);
   gz.appendChild(b);
 }
-if(etat.groupe && GROUPES[etat.groupe]) ouvrir(etat.groupe);
+detecterDossier().then(()=>{ if(etat.groupe && GROUPES[etat.groupe]) ouvrir(etat.groupe); });
 
 $('#back').onclick=()=>{
   $('#travail').classList.add('hide'); $('#accueil').classList.remove('hide');
@@ -201,7 +208,7 @@ function rendre(){
 
 function carte(num,e){
   const d=document.createElement('div'); d.className='essai';
-  const f='videos/J'+jour+'_'+num+'_t'+e+'.mp4';
+  const f=DOSSIER+'/J'+jour+'_'+num+'_t'+e+'.mp4';
   const k=cle(num,e);
   d.innerHTML =
    '<div class="top"><span class="num">Essai '+e+'</span><span class="res" id="res_'+k+'">'+
