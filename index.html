@@ -225,29 +225,39 @@ function carte(num,e){
   const v=d.querySelector('video'), tps=d.querySelector('.tps');
   const bd=d.querySelector('.dep'), bs=d.querySelector('.stop'), br=d.querySelector('.raz');
   const mk=d.querySelector('#mk_'+k), res=d.querySelector('#res_'+k);
-  let t0=null;
+  let t0=null, raf=null;
 
   const tick=()=>{ tps.textContent=v.currentTime.toFixed(2).replace('.',','); };
-  v.addEventListener('timeupdate',tick);
+  const boucle=()=>{ tick(); raf=requestAnimationFrame(boucle); };
+  const stopBoucle=()=>{ if(raf){ cancelAnimationFrame(raf); raf=null; } tick(); };
+  v.addEventListener('play',()=>{ if(!raf) boucle(); });
+  v.addEventListener('pause',stopBoucle);
+  v.addEventListener('ended',stopBoucle);
   v.addEventListener('seeked',tick);
+  v.addEventListener('timeupdate',tick);
+  v.addEventListener('loadedmetadata',tick);
 
   bd.onclick=()=>{
     t0=v.currentTime; bs.disabled=false;
-    mk.textContent='Départ marqué à '+fmt(t0);
+    mk.textContent='Départ marqué à '+fmt(t0)+'. Appuie sur Arrivée quand la souris monte sur la plateforme.';
     res.textContent='…';
   };
   bs.onclick=()=>{
     if(t0==null) return;
-    const t=v.currentTime-t0;
-    if(t<=0){ mk.textContent='L’arrivée doit être après le départ. Recommence.'; return; }
+    const t1=v.currentTime;          // on releve AVANT de mettre en pause
+    v.pause();                        // le chrono s'arrete net
+    stopBoucle();
+    const t=t1-t0;
+    if(t<=0){ mk.textContent='L’arrivée doit être après le départ. Reprends la vidéo au début.'; return; }
     etat[k]=t; save();
     res.textContent=fmt(t);
-    mk.textContent='Départ '+fmt(t0)+' → arrivée '+fmt(v.currentTime)+'  •  durée '+fmt(t);
+    mk.textContent='Départ '+fmt(t0)+' → arrivée '+fmt(t1)+'  •  durée '+fmt(t);
     bs.disabled=true; t0=null;
     majRecap();
   };
   br.onclick=()=>{
     delete etat[k]; save(); t0=null; bs.disabled=true;
+    v.pause(); stopBoucle();
     res.textContent='—'; mk.textContent='';
     majRecap();
   };
