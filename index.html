@@ -225,39 +225,44 @@ function carte(num,e){
   const v=d.querySelector('video'), tps=d.querySelector('.tps');
   const bd=d.querySelector('.dep'), bs=d.querySelector('.stop'), br=d.querySelector('.raz');
   const mk=d.querySelector('#mk_'+k), res=d.querySelector('#res_'+k);
-  let t0=null, raf=null;
+  let t0=null, raf=null, enCours=false;
 
-  const tick=()=>{ tps.textContent=v.currentTime.toFixed(2).replace('.',','); };
+  // le compteur affiche la DUREE depuis l'appui sur Depart, pas le temps de la video
+  const aff=x=>{ tps.textContent=Math.max(0,x).toFixed(2).replace('.',','); };
+  const tick=()=>{ if(enCours && t0!=null) aff(v.currentTime-t0); };
   const boucle=()=>{ tick(); raf=requestAnimationFrame(boucle); };
   const stopBoucle=()=>{ if(raf){ cancelAnimationFrame(raf); raf=null; } tick(); };
-  v.addEventListener('play',()=>{ if(!raf) boucle(); });
+  v.addEventListener('play',()=>{ if(enCours && !raf) boucle(); });
   v.addEventListener('pause',stopBoucle);
   v.addEventListener('ended',stopBoucle);
   v.addEventListener('seeked',tick);
   v.addEventListener('timeupdate',tick);
-  v.addEventListener('loadedmetadata',tick);
+  aff(etat[k]!=null?etat[k]:0);
 
   bd.onclick=()=>{
-    t0=v.currentTime; bs.disabled=false;
-    mk.textContent='Départ marqué à '+fmt(t0)+'. Appuie sur Arrivée quand la souris monte sur la plateforme.';
+    t0=v.currentTime; enCours=true; bs.disabled=false;
+    aff(0);
+    if(!raf && !v.paused) boucle();
+    mk.textContent='Départ marqué à '+fmt(t0)+' de la vidéo. Appuie sur Arrivée quand la souris monte sur la plateforme.';
     res.textContent='…';
   };
   bs.onclick=()=>{
     if(t0==null) return;
     const t1=v.currentTime;          // on releve AVANT de mettre en pause
-    v.pause();                        // le chrono s'arrete net
-    stopBoucle();
+    v.pause();
+    enCours=false; stopBoucle();
     const t=t1-t0;
-    if(t<=0){ mk.textContent='L’arrivée doit être après le départ. Reprends la vidéo au début.'; return; }
+    if(t<=0){ aff(0); mk.textContent='L’arrivée doit être après le départ. Reprends la vidéo au début.'; return; }
     etat[k]=t; save();
+    aff(t);
     res.textContent=fmt(t);
     mk.textContent='Départ '+fmt(t0)+' → arrivée '+fmt(t1)+'  •  durée '+fmt(t);
     bs.disabled=true; t0=null;
     majRecap();
   };
   br.onclick=()=>{
-    delete etat[k]; save(); t0=null; bs.disabled=true;
-    v.pause(); stopBoucle();
+    delete etat[k]; save(); t0=null; enCours=false; bs.disabled=true;
+    v.pause(); stopBoucle(); aff(0);
     res.textContent='—'; mk.textContent='';
     majRecap();
   };
